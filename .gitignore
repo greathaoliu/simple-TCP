@@ -6,3 +6,14 @@ doctests/CMakeFiles
 apps/CMakeFiles
 apps/cmake_install.cmake
 apps/Makefile
+CMakeFiles
+tests/Makefile
+.gitignore
+CTestTestfile.cmake
+.gitignore
+Makefile
+doctests/cmake_install.cmake
+doctests/Makefile
+libsponge/cmake_install.cmake
+libsponge/Makefile
+tests/cmake_install.cmake
