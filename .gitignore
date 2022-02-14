@@ -1,2 +1,8 @@
 /build
 /.ccls-cache
+libsponge/CMakeFiles
+doctests/CMakeFiles
+.vscode
+apps/CMakeFiles
+apps/cmake_install.cmake
+apps/Makefile
