@@ -35,13 +35,12 @@ uint64_t diff(uint64_t a, uint64_t b) {
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     uint32_t offset = n.raw_value() - isn.raw_value();
     uint64_t t = (checkpoint & 0xFFFFFFFF00000000) + offset;
-    uint64_t ret1 = t, ret2 = t + (1ul << 32), ret3 = t - (1ul << 32);
-    uint64_t ret = ret1;
-    if(diff(ret2, checkpoint) < diff(ret, checkpoint)) {
-        ret = ret2;
+    uint64_t ret = t;
+    if(diff( t + (1ul << 32), checkpoint) < diff(ret, checkpoint)) {
+        ret =  t + (1ul << 32);
     }
-    if(diff(ret3, checkpoint) < diff(ret, checkpoint)) {
-        ret = ret3;
+    if(diff( t - (1ul << 32), checkpoint) < diff(ret, checkpoint)) {
+        ret = t - (1ul << 32);
     }
 
     return ret;
