@@ -12,6 +12,7 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
+// 谨慎使用返回参数
 int StreamReassembler::merge_block(block_node& a, block_node& b) {
     bool flag = false; // 区分向前合并 向后合并
     if(a.begin > b.begin) {
@@ -29,9 +30,11 @@ int StreamReassembler::merge_block(block_node& a, block_node& b) {
         return b.length;
     }
     
+    int len = a.length;
     a.data = a.data + b.data.substr(a.begin + a.length - b.begin);
     a.length = a.data.length();
-    return a.begin + a.length - b.begin;
+    if(flag) return len;
+    return b.length;
 }
 
 StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity) {}
@@ -62,6 +65,7 @@ void StreamReassembler::push_substring(const string &data, const uint64_t index,
         node.length = data.length();
     }
 
+    int erased_bytes = 0;
     if(_blocks.empty()) {
         _blocks.insert(node);
         _unassembled_byte = node.length;
@@ -76,7 +80,7 @@ void StreamReassembler::push_substring(const string &data, const uint64_t index,
             while(iter != _blocks.end() && (merge_bytes = merge_block(node, next)) != -1) {
                 iter_next = iter;
                 iter_next ++;
-                _unassembled_byte -= merge_bytes;
+                erased_bytes += iter->length;
                 _blocks.erase(iter);
                 if(iter_next != _blocks.end()) {
                     next = *iter_next;
@@ -95,12 +99,13 @@ void StreamReassembler::push_substring(const string &data, const uint64_t index,
             while((merge_bytes = merge_block(node, next)) != -1) {
                 iter_next = iter;
                 iter_next --;
-                _unassembled_byte -= merge_bytes;
                 if(iter != _blocks.begin()) {
+                    erased_bytes += iter->length;
                     _blocks.erase(iter);
                     next = *iter_next;
                     iter = iter_next;
                 } else {
+                    erased_bytes += iter->length;
                     _blocks.erase(iter);
                     break;
                 }
@@ -108,7 +113,7 @@ void StreamReassembler::push_substring(const string &data, const uint64_t index,
         }
 
         _blocks.insert(node);
-        _unassembled_byte += node.length;
+        _unassembled_byte += node.length - erased_bytes;
     }
 
     while(!_blocks.empty() && _blocks.begin()->begin == _head_index) {
