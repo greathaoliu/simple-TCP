@@ -9,6 +9,55 @@
 #include <functional>
 #include <queue>
 
+
+class TCPRetransmissionTimer {
+  public:
+    // 初始重传超时时间
+    unsigned int _initial_RTO;
+
+    // 重传超时时间
+    unsigned int _RTO;
+
+    // time out
+    unsigned int _TO;
+
+    bool _open; // state of the timer 1开启 0关闭
+
+    TCPRetransmissionTimer(const uint16_t rtx_timeout)
+    : _initial_RTO(rtx_timeout), _RTO(rtx_timeout), _TO(0), _open(true) {}
+
+    bool open() { return _open; }
+
+    void start() {
+      _open = true;
+      _TO = 0;
+    }
+
+    void close() {
+      _open = false;
+      _TO = 0;
+    }
+
+    void double_RTO() {
+      _RTO *= 2;
+    }
+
+    // 返回true表示超时
+    bool tick(size_t ms_since_last_tick) {
+        if(!_open) return false;
+        
+        if(_TO + ms_since_last_tick >= _RTO){
+            _TO = 0;
+            return true;  // the retransmission timer has expired.
+        } 
+        
+        _TO += ms_since_last_tick;
+
+        return false;
+    }
+};
+
+
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -23,14 +72,33 @@ class TCPSender {
     //! outbound queue of segments that the TCPSender wants sent
     std::queue<TCPSegment> _segments_out{};
 
+    //! 可能会重传的segments
+    std::queue<TCPSegment> _segments_outstanding{};
+
     //! retransmission timer for the connection
     unsigned int _initial_retransmission_timeout;
 
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
+    TCPRetransmissionTimer _timer;
+
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    size_t _window_size{1};
+
+    unsigned int _consecutive_retransmissions{0};
+
+    // 已传输但未被ack确认的
+    size_t _bytes_in_flight{0};
+
+    // 收到的确认的绝对值
+    uint64_t _recv_abs_ackno{0};
+
+    bool _syn_sent = false;
+    
+    bool _fin_sent = false;
 
   public:
     //! Initialize a TCPSender
@@ -52,6 +120,9 @@ class TCPSender {
 
     //! \brief Generate an empty-payload segment (useful for creating empty ACK segments)
     void send_empty_segment();
+
+    //! \brief Generate an payload segment
+    void send_non_empty_segment(TCPSegment& seg);
 
     //! \brief create and send segments to fill as much of the window as possible
     void fill_window();

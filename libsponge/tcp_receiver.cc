@@ -14,7 +14,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     if(!_syn_flag && !seg.header().syn) return;
     if(_syn_flag && seg.header().syn) return;
 
-    static size_t abs_seqno = 0;
+    size_t abs_seqno = _base;
     size_t length = seg.length_in_sequence_space();
 
     if(seg.header().syn) {
@@ -33,7 +33,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     if(seg.header().fin) {
         if(_fin_flag) return;
         _fin_flag = true;
-    } else if (abs_seqno >= _base + window_size() || abs_seqno + length <= _base) {
+    } else if (abs_seqno >= _base + window_size() || abs_seqno + length <= _base) { // 超出接收窗口或早已接收时放弃接收
         return;
     }
 
