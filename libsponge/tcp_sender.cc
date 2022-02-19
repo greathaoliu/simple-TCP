@@ -66,11 +66,11 @@ void TCPSender::fill_window() {
 
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
-void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    if(ackno - next_seqno() > 0) return; // 确认超过发送
+bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
+    if(ackno - next_seqno() > 0) return false; // 确认超过发送
     uint64_t abs_ackno = unwrap(ackno, _isn, _recv_abs_ackno);
     _window_size = window_size;
-    if(abs_ackno <= _recv_abs_ackno) return; // 确认了已经经过确认的
+    if(abs_ackno <= _recv_abs_ackno) return true; // 确认了已经经过确认的
 
     _recv_abs_ackno = abs_ackno;
     // 恢复RTO初始值
@@ -94,6 +94,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     if(!_segments_outstanding.empty()) {
         _timer.start();
     }
+    return true;
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
