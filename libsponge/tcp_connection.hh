@@ -21,6 +21,20 @@ class TCPConnection {
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
 
+    size_t _ms_since_last_seg_recvd{0};
+
+    bool _connect_init{false};
+
+    bool _rst{false};
+
+    int _shutdown_status{0}; // 1 clean shutdown 2 unclean shutdown
+
+    TCPSegment popTCPSegment();
+
+    void test_end();
+
+    // 从sender的queue中取出要发送的segment
+    void fill_queue();
   public:
     //! \name "Input" interface for the writer
     //!@{
